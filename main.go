@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"reflect"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,6 +17,7 @@ func main() {
 	route.GET("/role", getRole)
 	route.POST("/role", createRole)
 	route.GET("/role/:newid", getRole)
+	route.PUT("/role/:newid", updateRole)
 	route.DELETE("/role/:newid", deleteRole)
 
 	route.Run(":8080")
@@ -58,6 +61,30 @@ func createRole(c *gin.Context) {
 	}
 
 	c.String(400, "New item is created unsuccessfully.")
+}
+
+func updateRole(c *gin.Context) {
+	newid := c.Param("newid")
+	if newid, err := strconv.Atoi(newid); err == nil {
+		var body map[string]interface{}
+		decoder := json.NewDecoder(c.Request.Body)
+		if err := decoder.Decode(&body); err == nil {
+			for k, v := range body {
+				originStruct := reflect.ValueOf(&Data[newid-1]).Elem()
+				if originStruct.Kind() == reflect.Struct {
+					originField := originStruct.FieldByName(strings.Title(k))
+					if originField.IsValid() && originField.CanSet() {
+						originField.Set(reflect.ValueOf(v))
+					}
+				}
+			}
+
+			c.String(200, "An Item is updated successfully.")
+			return
+		}
+	}
+
+	c.String(400, "An Item is updated unsuccessfully.")
 }
 
 func deleteRole(c *gin.Context) {
