@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -8,9 +9,11 @@ import (
 
 func main() {
 	Init()
+	gin.ForceConsoleColor()
 	route := gin.Default()
 
 	route.GET("/role", getRole)
+	route.POST("/role", createRole)
 	route.GET("/role/:newid", getRole)
 	route.DELETE("/role/:newid", deleteRole)
 
@@ -35,6 +38,26 @@ func getRole(c *gin.Context) {
 	}
 
 	c.JSON(200, Data)
+}
+
+func createRole(c *gin.Context) {
+	var newItem Role
+	decoder := json.NewDecoder(c.Request.Body)
+	if err := decoder.Decode(&newItem); err == nil {
+		skillIndex := uint(1)
+		for i := range newItem.Skills {
+			newItem.Skills[i].ID = skillIndex
+			skillIndex++
+		}
+
+		newItem.ID = uint(len(Data)) + 1
+		Data = append(Data, newItem)
+
+		c.String(200, "New item is created successfully.")
+		return
+	}
+
+	c.String(400, "New item is created unsuccessfully.")
 }
 
 func deleteRole(c *gin.Context) {
